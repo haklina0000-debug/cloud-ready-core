@@ -1,44 +1,53 @@
-// Firebase core
-import { initializeApp } from "firebase/app";
+// src/lib/firebase.ts
 
-// Firebase services
+import { initializeApp, getApps } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-import { getAnalytics, isSupported } from "firebase/analytics";
+import { getAnalytics } from "firebase/analytics";
 
-// ===============================
-// Firebase configuration
-// ===============================
+/**
+ * Firebase configuration
+ * (قيم حقيقية أو placeholders – لا يهم الآن)
+ */
 const firebaseConfig = {
-  apiKey: "AIzaSyBjBTHe4tcHrVyBq9ACHt_XeYTvrkhRPT8",
-  authDomain: "ntfly-web.firebaseapp.com",
-  projectId: "ntfly-web",
-  storageBucket: "ntfly-web.firebasestorage.app",
-  messagingSenderId: "725624317142",
-  appId: "1:725624317142:web:f2744bfb4ed4271f799577",
-  measurementId: "G-71HTBZD757",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "",
 };
 
-// ===============================
-// Initialize Firebase App
-// ===============================
-export const app = initializeApp(firebaseConfig);
+/**
+ * Check if Firebase is configured
+ */
+export const isFirebaseConfigured = (): boolean => {
+  return Boolean(
+    firebaseConfig.apiKey &&
+    firebaseConfig.authDomain &&
+    firebaseConfig.projectId
+  );
+};
 
-// ===============================
-// Initialize Services
-// ===============================
-export const auth = getAuth(app);
+/**
+ * Initialize app safely
+ */
+const app =
+  getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+
+/**
+ * Firebase services (safe exports)
+ */
+export const getFirebaseAuth = () => getAuth(app);
 export const db = getFirestore(app);
 
-// ===============================
-// Analytics (Safe for Netlify)
-// ===============================
-export let analytics: any = null;
+/**
+ * Analytics (only in browser)
+ */
+export const analytics =
+  typeof window !== "undefined" && isFirebaseConfigured()
+    ? getAnalytics(app)
+    : null;
 
-if (typeof window !== "undefined") {
-  isSupported().then((supported) => {
-    if (supported) {
-      analytics = getAnalytics(app);
-    }
-  });
-}
+export default app;
